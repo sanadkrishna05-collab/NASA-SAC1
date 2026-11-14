@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TERRA-SYNC | Agricultural Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#07131b;--panel:#0d2029;--panel2:#102832;--line:#1c3b43;--text:#e8f3ef;--muted:#91aaa8;--green:#57d39b;--cyan:#55c9d8;--amber:#f0bd69;--red:#ef887b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% -10%,#15333a 0,transparent 35%),var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:var(--cyan)}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+.sidebar{background:#081820;border-right:1px solid var(--line);padding:24px 16px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;gap:11px;align-items:center;padding:0 8px 26px}.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#54d99c,#3baab8);display:grid;place-items:center;color:#062019;font-weight:900;font-size:20px}.brand b{letter-spacing:1.5px;font-size:15px}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:2px}
+.navlabel{color:#6f8989;font-size:10px;letter-spacing:1.5px;padding:14px 10px 7px;font-weight:700}
+.nav button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:0;background:transparent;color:#a8bfbb;border-radius:10px;text-align:left;margin:3px 0}
+.nav button.active,.nav button:hover{background:#143039;color:#eafcf5}
+.nav .ico{width:20px;text-align:center}
+.sidefoot{margin-top:20px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0b1f27;color:var(--muted);font-size:11px}
+.live{color:var(--green);font-weight:700}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:900;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 22px;background:rgba(8,24,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top h1{margin:2px 0 0;font-size:19px}.eyebrow{color:var(--green);font-size:10px;font-weight:800;letter-spacing:1.4px}
+.topright{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{padding:6px 10px;border:1px solid #245058;border-radius:999px;background:#0f2b33;color:var(--green);font-size:11px;font-weight:700}
+.content{padding:22px;max-width:1500px;width:100%;margin:0 auto}
+.page{display:none}.page.active{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.heading{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.heading h2{margin:0 0 4px;font-size:23px}.heading p{margin:0;color:var(--muted)}
+.grid{display:grid;gap:16px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1100px){.grid.two,.grid.three,.grid.four{grid-template-columns:1fr}.app{grid-template-columns:1fr}.sidebar{position:static;height:auto}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.cardhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.cardhead h3{margin:0;font-size:15px}
+.tag{padding:3px 8px;border-radius:999px;background:#123039;color:var(--green);font-size:10px;font-weight:800;letter-spacing:.7px}
+.tag.warn{background:#3a2c14;color:var(--amber)}
+.metric-top{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:1px}
+.metric{font-size:28px;font-weight:800;margin:6px 0 3px;color:var(--green)}
+.delta{font-size:11px;color:var(--muted)}
+.good{color:var(--green);font-weight:700}.warn{color:var(--amber);font-weight:700}.bad{color:var(--red);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--green);font-weight:650;text-decoration:none}
+.btn:hover{border-color:var(--green)}.btn.primary{background:linear-gradient(135deg,#3fb98a,#2f9fae);border:0;color:#04231c}.btn.ghost{background:transparent;color:var(--green)}.btn.small{padding:6px 10px;font-size:12px}
+.field{margin-bottom:12px}label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.4px}
+input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#0b1f27;color:var(--text)}
+input:focus,select:focus,textarea:focus{outline:2px solid rgba(87,211,155,.18);border-color:var(--green)}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.formgrid .full{grid-column:1/-1}
+@media(max-width:700px){.formgrid{grid-template-columns:1fr}}
+.notice{padding:12px;border:1px solid #245058;border-radius:10px;background:#0d2b33;color:#c8e6dd}
+.footnote{margin-top:10px;color:var(--muted);font-size:11px}
+.data-list{display:grid;gap:8px}.data-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #17323a}.data-row:last-child{border-bottom:0}.data-row span{color:var(--muted)}.data-row b{text-align:right}
+.status{padding:3px 8px;border-radius:999px;background:#123039;color:var(--green);font-size:10px;font-weight:800}.status.warn{background:#3a2c14;color:var(--amber)}.status.bad{background:#3b1d1d;color:var(--red)}
+.map{height:460px;border-radius:12px;overflow:hidden;border:1px solid var(--line);position:relative}
+.map.small{height:340px}
+.leaflet-container{font:inherit;background:#0b1f27}
+.maptools{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.layerbox{position:absolute;left:10px;top:10px;z-index:800;background:rgba(8,24,32,.94);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:220px}
+.layerbox label{margin:0 0 3px}.layerbox .row{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:5px 0}
+.chart-box{position:relative;height:280px}.chart-box.tall{height:340px}
+table{width:100%;border-collapse:collapse;font-size:13px}th{padding:10px;text-align:left;background:#102832;color:#9fbdb7;font-size:11px;letter-spacing:.5px}td{padding:10px;border-bottom:1px solid #17323a}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+.strategy{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);cursor:pointer;transition:.15s}
+.strategy:hover{border-color:var(--green)}.strategy.selected{border-color:var(--green);box-shadow:0 0 0 3px rgba(87,211,155,.10)}
+.strategy h4{margin:0 0 5px}.strategy p{margin:0;color:var(--muted);font-size:12px}
+.seasonrow{display:flex;align-items:center;gap:14px}.seasonrow input{flex:1}.seasonnum{min-width:110px;font-weight:700;color:var(--green)}
+.home-hero{padding:32px;background:linear-gradient(135deg,#0e2b33,#0b1f27);border:1px solid var(--line);border-radius:18px}
+.home-hero h2{margin:0 0 8px;font-size:30px;line-height:1.15}.home-hero p{margin:0 0 18px;color:var(--muted);max-width:760px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#123039;color:var(--green);font-size:10px;font-weight:800;letter-spacing:.7px}
+.home-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:18px}
+.home-card{display:block;padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:14px;text-decoration:none;color:var(--text);transition:.15s}
+.home-card:hover{border-color:var(--green);transform:translateY(-2px)}
+.home-card h3{margin:0 0 6px;color:var(--green)}.home-card p{margin:0;color:var(--muted);font-size:12.5px}.home-card .kicker{font-size:10px;font-weight:800;letter-spacing:1.2px;color:var(--muted)}
+.modalback{position:fixed;inset:0;z-index:1200;display:none;place-items:center;background:rgba(2,10,8,.55);padding:20px}.modalback.open{display:grid}
+.modal{width:min(760px,100%);max-height:82vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.modalhead h3{margin:0}
+.x{border:0;background:#17323a;border-radius:8px;width:32px;height:32px;font-weight:800;color:var(--text)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);z-index:1300;padding:11px 16px;border-radius:10px;background:#123039;color:var(--green);font-weight:600;opacity:0;pointer-events:none;transition:.2s;border:1px solid var(--line)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px}
+@media(max-width:1100px){.split{grid-template-columns:1fr}}
+.kpi-list{display:grid;gap:8px}.kpi{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed #1c3b43}.kpi:last-child{border:0}.kpi span{color:var(--muted)}.kpi b{color:var(--text)}
+
+/* ---- multi-site shell ---- */
+.btn.primary{background:linear-gradient(135deg,var(--green),var(--cyan))}
+body[data-view=landing] .sidebar,body[data-view=landing] .top{display:none}
+body[data-view=landing] .app{grid-template-columns:1fr}
+body[data-view=dash] .sitenav,body[data-view=dash] .sitefoot,body[data-view=dash] #footnoteLanding{display:none}
+.sitenav{position:sticky;top:0;z-index:900;display:flex;justify-content:space-between;align-items:center;padding:14px 32px;background:rgba(8,24,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.sitenav .brand{padding:0}.sitenav .links{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sitenav .links a{color:#a8bfbb;text-decoration:none;padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer}
+.sitenav .links a:hover{background:#143039;color:#eafcf5}
+.crumb{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+.crumb a{color:var(--muted);text-decoration:none;cursor:pointer}.crumb a:hover{color:var(--green)}.crumb b{color:var(--text)}
+.dashtabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
+.dashtabs a{padding:7px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted);text-decoration:none;font-size:12px;font-weight:650;cursor:pointer}
+.dashtabs a:hover{color:var(--text);border-color:var(--green)}.dashtabs a.on{background:var(--green);color:#04231c;border-color:var(--green)}
+.page>.heading{padding:18px 20px;border:1px solid var(--line);border-left:4px solid var(--green);border-radius:14px;background:linear-gradient(90deg,rgba(255,255,255,.04),transparent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.landing-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:18px}
+.landing-stats .card b{display:block;font-size:26px;color:var(--green)}
+.sitefoot{margin-top:40px;padding:24px 0;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:11px}
+.home-card .go{display:inline-block;margin-top:12px;color:var(--green);font-weight:700;font-size:12px}
+.home-card{border-top:3px solid var(--acc,var(--green))}.home-card h3{color:var(--acc,var(--green))}
+@media(max-width:700px){.sitenav{padding:12px 16px}.sitenav .links a.hide-s{display:none}}
+
+/* ---- clean light theme ---- */
+:root{color-scheme:light;--bg:#f4f7f5;--panel:#ffffff;--panel2:#f7faf8;--line:#dce6e0;--text:#20332b;--muted:#687d73;--green:#27865e;--cyan:#278b9b;--amber:#a66a16;--red:#c34f4f}
+body{background:#f4f7f5;color:var(--text)}
+.sidebar{background:#fff;border-color:var(--line)}
+.brand small,.navlabel{color:#75877e}
+.nav button{color:#52675d}
+.nav button.active,.nav button:hover{background:#e8f4ed;color:#176644}
+.sidefoot{background:#f6faf7;border-color:var(--line);color:#61766b}
+.top{background:rgba(255,255,255,.94);border-color:var(--line)}
+.pill{background:#edf7f1;border-color:#cfe5d7;color:#21734e}
+.card,.home-card,.modal{background:#fff;border-color:var(--line);color:var(--text)}
+.cardhead h3,.heading h2,.home-card{color:var(--text)}
+.tag,.badge,.status{background:#e8f5ed;color:#26734f}
+.tag.warn,.status.warn{background:#fff4df;color:#98600e}
+.status.bad{background:#fdeaea;color:#b43f3f}
+.metric{color:#218354}
+.btn{border-color:#d3e1d9;color:#26734f;background:#fff}
+.btn:hover{border-color:#27865e;background:#f4faf6}
+.btn.primary{background:linear-gradient(135deg,#299766,#2696a1);color:#fff;border:0}
+.btn.ghost{color:#26734f}
+input,select,textarea{background:#fff;color:#20332b;border-color:#d3e1d9}
+input::placeholder,textarea::placeholder{color:#899a91}
+.notice{background:#eff8f2;border-color:#cce5d4;color:#355d47}
+.data-row,.kpi{border-color:#e6eee9}
+th{background:#edf4ef;color:#496256}
+td{border-color:#e6eee9}
+.strategy{background:#fff;border-color:#dce6e0}
+.strategy p,.home-card p{color:#687d73}
+.strategy.selected{border-color:#27865e;box-shadow:0 0 0 3px rgba(39,134,94,.10)}
+.home-hero{background:linear-gradient(135deg,#e9f6ed,#f7fbf8);border-color:#d5e7db}
+.home-hero p,.footnote,.delta{color:#687d73}
+.home-card:hover{border-color:#27865e}
+.sitenav{background:rgba(255,255,255,.96);border-color:var(--line)}
+.sitenav .links a{color:#52675d}
+.sitenav .links a:hover{background:#e8f4ed;color:#176644}
+.dashtabs a{border-color:#dce6e0;color:#62766c;background:#fff}
+.dashtabs a.on{background:#27865e;color:#fff;border-color:#27865e}
+.page>.heading{background:linear-gradient(90deg,#eef7f1,transparent);border-color:#dce6e0;border-left-color:#27865e}
+.pager{border-color:#dce6e0}
+.sitefoot{border-color:#dce6e0;color:#71847a}
+.modalback{background:rgba(26,45,35,.38)}
+.x{background:#edf3ef;color:#344b3e}
+.toast{background:#e8f5ed;color:#216b49;border-color:#cfe5d7}
+.layerbox{background:rgba(255,255,255,.96);border-color:#dce6e0;color:#20332b;box-shadow:0 2px 10px rgba(20,50,35,.08)}
+.leaflet-container{background:#eef3ef}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#fff;color:#20332b}
+#farmSvg{background:#f3f7f3}
+.resource-intro{padding:16px 18px;background:#edf7f0;border:1px solid #d5e8da;border-radius:12px;margin-bottom:14px}
+.resource-intro p{margin:5px 0 0;color:#60766a}
+.resource-controls{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;margin:14px 0 8px}
+.resource-count{font-size:12px;color:#687d73;margin:8px 0}
+.resource-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:12px}
+.resource-card{background:#fff;border:1px solid #dce6e0;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(30,70,45,.035)}
+.resource-card[hidden]{display:none}
+.resource-card h3{font-size:15px;margin:9px 0 3px;color:#203c2e}
+.resource-card p{font-size:12.5px;color:#65796e;margin:8px 0 0;line-height:1.55}
+.resource-meta{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:10px;font-weight:700;color:#39805d}
+.resource-region{color:#7a817c;background:#f1f4f2;padding:3px 7px;border-radius:20px}
+.resource-cat{font-size:11px;color:#258b91;font-weight:700}
+@media(max-width:700px){.resource-controls{grid-template-columns:1fr}}
+@media print{body{background:#fff;color:#000}.sidebar,.top,.sitenav,.pager{display:none!important}.card,.resource-card{break-inside:avoid}}
+
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+ <div class="brand"><div class="logo">✳</div><div><b>TERRA-SYNC</b><small>AGRICULTURAL INTELLIGENCE</small></div></div>
+ <div class="navlabel">WORKSPACE</div>
+ <nav class="nav">
+  <button data-page="home"><span class="ico">⌂</span>Home</button>
+  <button data-page="overview"><span class="ico">▦</span>Overview</button>
+  <button data-page="explorer"><span class="ico">⌖</span>Field Explorer</button>
+  <button data-page="satellite"><span class="ico">🛰</span>Satellite Intelligence</button>
+  <button data-page="climate"><span class="ico">☁</span>Climate & Weather</button>
+  <button data-page="twin"><span class="ico">◈</span>Farm Digital Twin</button>
+  <button data-page="visual"><span class="ico">▦</span>Farm Visualisation</button>
+  <button data-page="lab"><span class="ico">⟳</span>Rotation Lab</button>
+  <button data-page="compare"><span class="ico">▤</span>Scenario Compare</button>
+  <button data-page="recommend"><span class="ico">✧</span>Recommendations</button>
+  <button data-page="resources"><span class="ico">◎</span>Data Resources</button>
+   <button data-page="reports"><span class="ico">⇩</span>Reports & Export</button>
+ </nav>
+ <div class="sidefoot"><b>MISSION CONTROL · v3.1</b><br><span class="live">● LEAFLET + NASA READY</span><br><br>Leaflet · OpenStreetMap · Esri World Imagery · NASA POWER · NASA GIBS<br>Decision-support prototype. Not a certified agronomic forecast.</div>
+</aside>
+<main class="main">
+<header class="top">
+ <div><div class="crumb"><a onclick="go('home')">TERRA-SYNC</a> / <span>Dashboards</span> / <b id="crumbNow">Overview</b></div><h1 id="pageTitle">Workspace selection</h1></div>
+ <div class="topright">
+  <button class="btn ghost" onclick="go('home')">⌂ Home</button>
+  <button class="btn ghost" onclick="goBack()">← Back</button>
+  <span class="pill" id="locationPill">⌖ Palakkad, Kerala · Sample field</span>
+  <button class="btn ghost" onclick="openModal('help')">ⓘ Data & methods</button>
+ </div>
+</header>
+<header class="sitenav"><div class="brand"><div class="logo">✳</div><div><b>TERRA-SYNC</b><small>AGRICULTURAL INTELLIGENCE</small></div></div>
+ <div class="links"><a class="hide-s" onclick="go('explorer')">Field Explorer</a><a class="hide-s" onclick="go('climate')">Climate</a><a class="hide-s" onclick="go('lab')">Rotation Lab</a><a class="hide-s" onclick="go('reports')">Reports</a><a class="btn primary small" onclick="go('overview')">Launch dashboards →</a></div></header>
+<div class="content">
+
+<section class="page active" id="home">
+ <div class="home-hero">
+  <span class="badge">EARTH-OBSERVATION DECISION SUPPORT</span>
+  <h2>Plan climate-resilient cropping with open maps, satellite context and NASA Earth data</h2>
+  <p>TERRA-SYNC combines keyless open-map field navigation, Esri and NASA satellite context, NASA POWER climate observations, farmer-entered soil information, transparent rotation scenarios and a generated schematic farm layout.</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+   <a class="btn primary" href="#explorer" onclick="go('explorer');return false">Open field explorer</a>
+   <a class="btn" href="#visual" onclick="go('visual');return false">Generate farm visual</a>
+   <a class="btn" href="#climate" onclick="go('climate');return false">Load NASA climate</a>
+  </div>
+ </div>
+ <div class="landing-stats"><div class="card"><b>10</b>separate dashboards</div><div class="card"><b>3</b>rotation strategies</div><div class="card"><b>5</b>season simulation</div><div class="card"><b>NASA</b>POWER · GIBS data</div></div>
+ <div class="navlabel" style="padding:26px 2px 0">CHOOSE A DASHBOARD</div>
+ <div class="home-menu">
+  <a class="home-card" style="--acc:#57d39b" href="#overview" onclick="go('overview');return false"><div class="kicker">MISSION OVERVIEW</div><h3>Farm Overview</h3><p>Field status, environmental indicators and data provenance.</p><span class="go">Open dashboard →</span></a>
+  <a class="home-card" style="--acc:#5aa9ff" href="#explorer" onclick="go('explorer');return false"><div class="kicker">OPEN MAPS</div><h3>Field Explorer</h3><p>Satellite imagery, street maps, place search and location tools.</p><span class="go">Open dashboard →</span></a>
+  <a class="home-card" style="--acc:#b48cff" href="#satellite" onclick="go('satellite');return false"><div class="kicker">REMOTE SENSING</div><h3>Satellite Intelligence</h3><p>Esri imagery plus NASA GIBS MODIS NDVI, SMAP soil moisture and GPM IMERG rainfall layers.</p><span class="go">Open dashboard →</span></a>
+  <a class="home-card" style="--acc:#55c9d8" href="#climate" onclick="go('climate');return false"><div class="kicker">NASA EARTH DATA</div><h3>Climate & Weather</h3><p>Retrieve NASA POWER daily climate observations and export the series.</p><span class="go">Open dashboard →</span></a>
+  <a class="home-card" style="--acc:#f0bd69" href="#twin" onclick="go('twin');return false"><div class="kicker">FARM MODEL</div><h3>Farm Digital Twin</h3><p>Define soil, crop, irrigation and management context for analysis.</p><span class="go">Open dashboard →</span></a>
+  <a class="home-card" style="--acc:#7ad36b" href="#visual" onclick="go('visual');return false"><div class="kicker">FARM DESIGN</div><h3>Farm Visualisation</h3><p>Generate a visual farm layout from soil, irrigation, crop and rotation inputs.</p><span class="go">Open dashboard →</span></a>
+  <a class="home-card" style="--acc:#ff9f6b" href="#lab" onclick="go('lab');return false"><div class="kicker">SCENARIO MODELLING</div><h3>Rotation Lab</h3><p>Run and inspect five-season rotation scenarios.</p><span class="go">Open dashboard →</span></a>
+  <a class="home-card" style="--acc:#ef887b" href="#compare" onclick="go('compare');return false"><div class="kicker">TRADE-OFFS</div><h3>Scenario Compare</h3><p>Compare soil, water-demand and climate-resilience outcomes.</p><span class="go">Open dashboard →</span></a>
+  <a class="home-card" style="--acc:#e58cff" href="#recommend" onclick="go('recommend');return false"><div class="kicker">DECISION SUPPORT</div><h3>Recommendations</h3><p>Generate an explainable rotation suggestion from farmer priorities.</p><span class="go">Open dashboard →</span></a>
+  <a class="home-card" style="--acc:#8fb3c9" href="#reports" onclick="go('reports');return false"><div class="kicker">DOCUMENTATION</div><h3>Reports & Export</h3><p>Create a field briefing and export climate or scenario data.</p><span class="go">Open dashboard →</span></a>
+   <a class="home-card" style="--acc:#4b9b88" href="#resources" onclick="go('resources');return false"><div class="kicker">OPEN DATA CATALOGUE</div><h3>NASA & Partner Resources</h3><p>Explore satellite, soil, climate, water, terrain and agricultural datasets.</p><span class="go">Browse resources →</span></a>
+ </div>
+</section>
+
+<section class="page" id="overview">
+ <div class="heading"><div><h2>Farm intelligence overview</h2><p>Integrated status for the currently configured demonstration field.</p></div><button class="btn primary" onclick="go('twin')">Configure farm →</button></div>
+ <div class="grid four">
+  <div class="card"><div class="metric-top">VEGETATION DATA <span>◉</span></div><div class="metric" id="kpiNdvi">NASA GIBS</div><div class="delta">MODIS NDVI overlay available in Satellite Intelligence</div></div>
+  <div class="card"><div class="metric-top">SOIL MOISTURE DATA <span>≈</span></div><div class="metric" id="kpiSoil">SMAP L4</div><div class="delta">Regional 9 km overlay available in Satellite Intelligence</div></div>
+  <div class="card"><div class="metric-top">RAINFALL · 30D <span>☂</span></div><div class="metric" id="kpiRain">—<span style="font-size:14px"> mm</span></div><div class="delta" id="kpiRainNote">No live climate series retrieved yet</div></div>
+  <div class="card"><div class="metric-top">FIELD RESILIENCE <span>◇</span></div><div class="metric" id="kpiRes">—<span style="font-size:14px">/100</span></div><div class="delta">Simulated heuristic index · responds to farm profile</div></div>
+ </div>
+ <div class="split" style="margin-top:16px">
+  <div class="card"><div class="cardhead"><h3>Field geospatial context</h3><button class="btn small" onclick="go('explorer')">Open field explorer</button></div><div class="map small" id="overviewMap"></div><div class="footnote">Basemap: Esri World Imagery. Sample boundary is illustrative and is not a cadastral or revenue-record boundary.</div></div>
+  <div class="card"><div class="cardhead"><h3>Environmental signals</h3><span class="tag" id="dataModeTag">AWAITING NASA DATA</span></div>
+   <div class="kpi-list">
+    <div class="kpi"><span>Mean maximum temperature</span><b id="envTmax">—</b></div>
+    <div class="kpi"><span>Mean minimum temperature</span><b id="envTmin">—</b></div>
+    <div class="kpi"><span>Total precipitation</span><b id="envRain">—</b></div>
+    <div class="kpi"><span>Mean solar radiation</span><b id="envSolar">—</b></div>
+    <div class="kpi"><span>Current crop</span><b id="envCrop">Rice</b></div>
+    <div class="kpi"><span>Irrigation access</span><b id="envIrr">Seasonal / limited</b></div>
+   </div>
+   <div class="notice" style="margin-top:12px">Values labelled “NASA POWER” are retrieved from the NASA POWER API. Values labelled “Sample” are illustrative interface demonstrations and must not be treated as measurements.</div>
+  </div>
+ </div>
+ <div class="card" style="margin-top:16px"><div class="cardhead"><h3>Data transparency & model limitations</h3><span class="tag">AUDITABLE</span></div>
+  <div class="grid three">
+   <div><div class="small muted" style="margin-bottom:6px">CONNECTED DATA</div><div class="data-list"><div class="data-row"><span>NASA POWER</span><b>Live API on request</b></div><div class="data-row"><span>Field maps</span><b>Leaflet · Esri · OpenStreetMap</b></div><div class="data-row"><span>Esri imagery</span><b>Keyless basemap</b></div></div><p class="footnote">NASA POWER units: °C, mm/day and kWh/m²/day.</p></div>
+   <div><div class="small muted" style="margin-bottom:6px">NASA EARTH OBSERVATION</div><div class="data-list"><div class="data-row"><span>SMAP soil moisture</span><b class="good">NASA GIBS layer</b></div><div class="data-row"><span>MODIS vegetation</span><b class="good">NASA GIBS layer</b></div><div class="data-row"><span>GPM IMERG rainfall</span><b class="good">NASA GIBS layer</b></div></div><p class="footnote">These are public satellite map overlays. They provide regional visual context; field-boundary zonal statistics are not calculated by this standalone browser app.</p></div>
+   <div><div class="small muted" style="margin-bottom:6px">MODEL OUTPUTS</div><div class="data-list"><div class="data-row"><span>Vegetation index</span><b>MODIS map layer</b></div><div class="data-row"><span>Soil moisture</span><b>SMAP map layer</b></div><div class="data-row"><span>Resilience index</span><b>Heuristic</b></div><div class="data-row"><span>Rotation outcomes</span><b>Simulated</b></div></div><p class="footnote">NASA satellite layers are regional visual context, not parcel-level zonal statistics. The rotation model uses transparent crop-group and soil heuristics; it is not a calibrated crop-growth or yield model.</p></div>
+  </div>
+ </div>
+</section>
+
+<section class="page" id="explorer">
+ <div class="heading"><div><h2>Field Explorer</h2><p>Use free open maps to locate, inspect and configure the analysis field.</p></div><button class="btn primary" onclick="useSampleField()">Use sample field</button></div>
+ <div class="split">
+  <div class="card">
+   <div class="cardhead"><h3>Open map field view</h3><span class="tag" id="mapStatus">OPEN MAP · READY</span></div>
+   <div class="field"><label>Map layer</label><select id="explorerBase" onchange="setExplorerBase(this.value)"><option value="esri">Satellite imagery · Esri</option><option value="osm">Street map · OpenStreetMap</option></select></div>
+   <div class="map" id="explorerMap" style="margin-top:12px"></div>
+   <div class="maptools">
+    <button class="btn small" onclick="locateMe()">📍 My location</button>
+    <button class="btn small" onclick="useSampleField()">Use sample field</button>
+    <button class="btn small" onclick="copyCoords()">Copy coordinates</button>
+    <button class="btn small" onclick="setExplorerBase('esri')">Satellite</button>
+    <button class="btn small" onclick="setExplorerBase('osm')">Street map</button>
+   </div>
+   <div class="footnote">No open maps key or billing account is required. Map tiles are supplied by Esri and OpenStreetMap; place search uses the public OpenStreetMap Nominatim service.</div>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h3>Selected analysis point</h3><span class="tag">OPEN GEOCODING</span></div>
+   <div class="field"><label>Search a village, town or landmark</label><div style="display:flex;gap:8px"><input id="placeSearch" placeholder="e.g. Palakkad, Kerala"><button class="btn primary" onclick="searchPlace()">Search</button></div></div>
+   <div class="kpi-list">
+    <div class="kpi"><span>Latitude</span><b id="latOut">10.780000</b></div>
+    <div class="kpi"><span>Longitude</span><b id="lonOut">76.650000</b></div>
+    <div class="kpi"><span>Approximate field area</span><b id="areaOut">2.40 ha</b></div>
+    <div class="kpi"><span>Boundary status</span><b>Illustrative sample parcel</b></div>
+    <div class="kpi"><span>Suitable for NASA POWER</span><b class="good">Yes · point-based API</b></div>
+   </div>
+   <div class="field" style="margin-top:12px"><label>Field name</label><input id="fieldName" value="Palakkad Demo A"></div>
+   <div class="field"><label>Farm area (hectares)</label><input id="area" type="number" min="0.1" step="0.1" value="2.4"></div>
+   <div class="notice">For production deployment, replace the sample polygon with a verified farm boundary uploaded as GeoJSON/KML or drawn and validated by the user. This prototype does not claim legal parcel ownership or cadastral accuracy.</div>
+  </div>
+ </div>
+</section>
+
+<section class="page" id="satellite">
+ <div class="heading"><div><h2>Satellite Intelligence</h2><p>Inspect recent satellite imagery and vegetation-context layers around the selected field.</p></div><button class="btn primary" onclick="refreshSatellite()">Refresh satellite view</button></div>
+ <div class="card">
+  <div class="cardhead"><h3>Interactive satellite workspace</h3><span class="tag" id="satStatus">READY</span></div>
+  <div class="map" id="satelliteMap"></div>
+  <div class="layerbox">
+   <label>Base imagery</label>
+   <select id="baseLayer" onchange="setBaseLayer(this.value)">
+    <option value="esri">Esri World Imagery</option>
+    <option value="osm">OpenStreetMap</option>
+   </select>
+   <label style="margin-top:9px">NASA overlay</label>
+   <select id="gibsLayer" onchange="setGibsLayer(this.value)">
+    <option value="none">None</option>
+    <option value="ndvi">MODIS Terra NDVI · 8-day</option>
+    <option value="lst">MODIS Terra Land Surface Temperature · daily</option>
+     <option value="smap">SMAP L4 Root-Zone Soil Moisture · 9 km</option>
+     <option value="smap_surface">SMAP L4 Surface Soil Moisture · 9 km</option>
+     <option value="imerg">GPM IMERG Rain Rate</option>
+   </select>
+   <label style="margin-top:9px">Overlay date</label>
+   <input id="gibsDate" type="date" onchange="setGibsLayer(document.getElementById('gibsLayer').value)">
+   <label style="margin-top:9px">Overlay opacity</label>
+   <input id="gibsOpacity" type="range" min="0" max="100" value="70" oninput="setOpacity(this.value)">
+   <div class="row"><span class="small muted">Legend</span><span class="small muted" id="gibsLegend">No overlay</span></div>
+  </div>
+  <div class="footnote">NASA GIBS provides publicly accessible visualisation layers. MODIS NDVI is vegetation-context imagery, not a field-specific yield measurement. Cloud cover, revisit timing and resolution can limit interpretation.</div>
+ </div>
+ <div class="grid three" style="margin-top:16px">
+  <div class="card"><div class="metric-top">SELECTED COORDINATE</div><div class="metric" id="satCoords" style="font-size:20px">10.78°N, 76.65°E</div><div class="delta">Analysis point for NASA POWER and satellite context</div></div>
+  <div class="card"><div class="metric-top">ACTIVE VEGETATION LAYER</div><div class="metric" id="activeGibs" style="font-size:20px">None</div><div class="delta">NASA GIBS MODIS vegetation context</div></div>
+  <div class="card"><div class="metric-top">INTERPRETATION</div><div class="metric" style="font-size:20px">Visual</div><div class="delta">Use alongside ground truth, soil tests and crop-stage observations</div></div>
+ </div>
+</section>
+
+<section class="page" id="climate">
+ <div class="heading"><div><h2>Climate & Weather</h2><p>Retrieve recent NASA POWER daily climate observations for the selected coordinate.</p></div><button class="btn primary" id="powerBtn" onclick="loadPower()">Retrieve NASA POWER data</button></div>
+ <div class="grid four">
+  <div class="card"><div class="metric-top">MEAN AIR TEMPERATURE</div><div class="metric" id="climT">—</div><div class="delta">NASA POWER · selected period</div></div>
+  <div class="card"><div class="metric-top">TOTAL PRECIPITATION</div><div class="metric" id="climP">—</div><div class="delta">NASA POWER · selected period</div></div>
+  <div class="card"><div class="metric-top">MEAN SOLAR RADIATION</div><div class="metric" id="climS">—</div><div class="delta">NASA POWER · selected period</div></div>
+  <div class="card"><div class="metric-top">DRY DAYS</div><div class="metric" id="climDry">—</div><div class="delta">Days with precipitation below 1 mm</div></div>
+ </div>
+ <div class="split" style="margin-top:16px">
+  <div class="card"><div class="cardhead"><h3>Daily climate observations</h3><span class="tag" id="powerStatus">Ready to query</span></div><div class="chart-box"><canvas id="climateChart"></canvas></div><div class="footnote" id="powerOutput">No API response retrieved yet. Select “Retrieve NASA POWER data” to request daily observations for the selected coordinate.</div></div>
+  <div class="card"><div class="cardhead"><h3>Request configuration</h3><span class="tag">NASA POWER</span></div>
+   <div class="field"><label>Observation period</label><select id="climateRange"><option value="14">Last 14 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div>
+   <div class="field"><label>Latitude</label><input id="climLat" type="number" step="0.000001" value="10.78"></div>
+   <div class="field"><label>Longitude</label><input id="climLon" type="number" step="0.000001" value="76.65"></div>
+   <button class="btn" onclick="loadPower()">Run request</button>
+   <button class="btn ghost" onclick="exportClimateCsv()">Export CSV</button>
+   <div class="notice" style="margin-top:12px">NASA POWER provides gridded daily agroclimatology data. NASA GIBS also provides public SMAP L4 soil-moisture and GPM IMERG rainfall map layers; both are regional products, not field sensors or operational forecasts.</div>
+   <div class="footnote">Source: NASA POWER. Coordinates: <span id="powerCoordNote">10.78°N, 76.65°E</span>.</div>
+  </div>
+ </div>
+</section>
+
+<section class="page" id="twin">
+ <div class="heading"><div><h2>Farm Digital Twin</h2><p>Configure the field characteristics used by the transparent decision-support heuristics.</p></div><button class="btn primary" onclick="saveFarm()">Save farm profile</button></div>
+ <div class="split">
+  <div class="card"><div class="cardhead"><h3>Soil and field properties</h3><span class="tag">EDITABLE</span></div>
+   <div class="formgrid">
+    <div class="field"><label>Soil texture</label><select id="soil"><option>Loam</option><option>Sandy loam</option><option>Clay loam</option><option>Clay</option><option>Lateritic</option></select></div>
+    <div class="field"><label>Soil pH</label><input id="ph" type="number" min="3" max="10" step="0.1" value="6.2"></div>
+    <div class="field"><label>Organic carbon (%)</label><input id="carbon" type="number" min="0" max="10" step="0.1" value="1.2"></div>
+    <div class="field"><label>Farm area (hectares)</label><input id="area" type="number" min="0.1" step="0.1" value="2.4"></div>
+    <div class="field"><label>Current crop</label><select id="crop"><option>Rice</option><option>Maize</option><option>Groundnut</option><option>Pulses</option><option>Banana</option><option>Millet</option></select></div>
+    <div class="field"><label>Irrigation access</label><select id="irrigation"><option>Seasonal / limited</option><option>Reliable</option><option>Rainfed only</option></select></div>
+    <div class="field full"><label>Previous crop history</label><input id="history" value="Rice → Rice → Rice" placeholder="e.g. Rice → pulses → rice"></div>
+   </div>
+   <div class="notice">Farm inputs are stored locally in this browser. They are not uploaded to a server by this standalone prototype.</div>
+  </div>
+  <div class="card"><div class="cardhead"><h3>Live digital-twin profile</h3><span class="tag">LOCAL PROFILE</span></div><div class="data-list" id="twinSummary"></div>
+   <div class="cardhead" style="margin-top:16px"><h3>Field resilience screen</h3><span class="tag">HEURISTIC</span></div>
+   <div class="chart-box" style="height:220px"><canvas id="twinChart"></canvas></div>
+   <div class="notice" style="margin-top:12px">Soil properties are farmer-entered values, not laboratory measurements. Obtain a soil test before fertiliser, lime or amendment decisions.</div>
+  </div>
+ </div>
+</section>
+
+<section class="page" id="visual">
+ <div class="heading"><div><h2>Farm Visualisation</h2><p>Generate a schematic farm layout from the current digital-twin profile and selected rotation strategy.</p></div><button class="btn primary" onclick="renderFarmVisual()">Regenerate farm visual</button></div>
+ <div class="split">
+  <div class="card">
+   <div class="cardhead"><h3>Schematic farm layout</h3><span class="tag">GENERATED FROM INPUTS</span></div>
+   <div style="border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0b1f27">
+    <svg id="farmSvg" viewBox="0 0 900 560" width="100%" height="auto" preserveAspectRatio="xMidYMid meet"></svg>
+   </div>
+   <div class="footnote">This is a schematic planning visual, not a surveyed or cadastral farm map. Plot dimensions, irrigation placement and crop colours are illustrative.</div>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h3>Farm design summary</h3><span class="tag">SCHEMATIC</span></div>
+   <div class="data-list" id="visualSummary"></div>
+   <div class="cardhead" style="margin-top:16px"><h3>Rotation layout</h3><span class="tag">5 SEASONS</span></div>
+   <div class="data-list" id="rotationLayout"></div>
+   <div class="notice" style="margin-top:12px">The layout adapts to the selected irrigation access, soil texture, farm area and rotation strategy. It is intended to support planning discussions, not replace a professional farm-design or land-survey plan.</div>
+  </div>
+ </div>
+</section>
+
+<section class="page" id="lab">
+ <div class="heading"><div><h2>Crop Rotation Simulation Lab</h2><p>Build and inspect alternative five-season cropping strategies.</p></div><button class="btn primary" onclick="runSimulation()">Run five-season simulation</button></div>
+ <div class="grid three" id="strategies">
+  <div class="strategy selected" data-strategy="balanced" onclick="selectStrategy('balanced')"><h4>01 · Balanced rotation</h4><p>Rice → Pulses → Maize → Groundnut → Rice</p><div class="small good" style="margin-top:8px">Diverse sequence · moderate water demand</div><div class="small muted" id="res-balanced" style="margin-top:8px"></div></div>
+  <div class="strategy" data-strategy="cereal" onclick="selectStrategy('cereal')"><h4>02 · Cereal intensive</h4><p>Rice → Maize → Rice → Maize → Rice</p><div class="small warn" style="margin-top:8px">Higher nutrient and water pressure</div><div class="small muted" id="res-cereal" style="margin-top:8px"></div></div>
+  <div class="strategy" data-strategy="legume" onclick="selectStrategy('legume')"><h4>03 · Legume-forward</h4><p>Pulses → Groundnut → Millet → Pulses → Rice</p><div class="small good" style="margin-top:8px">Legume-rich · lower relative water demand</div><div class="small muted" id="res-legume" style="margin-top:8px"></div></div>
+ </div>
+ <div class="card" style="margin-top:16px"><div class="cardhead"><h3>Simulation horizon</h3><span class="tag">5 GROWING SEASONS</span></div>
+  <div class="seasonrow"><span class="small muted">Season</span><input type="range" min="1" max="5" value="1" id="season" oninput="updateSeason(this.value)"><span class="seasonnum" id="seasonLabel">Season 1 / 5</span></div>
+  <div class="grid three" id="seasonMetrics" style="margin-top:14px"></div>
+  <div class="footnote">Outputs are transparent, rule-based scenario estimates intended for comparison. They are not calibrated crop-growth predictions or yield guarantees.</div>
+ </div>
+ <div class="card" style="margin-top:16px"><div class="cardhead"><h3>Five-season environmental trajectory</h3><span class="small muted">Relative index · higher is better</span></div><div class="chart-box tall"><canvas id="rotationChart"></canvas></div></div>
+</section>
+
+<section class="page" id="compare">
+ <div class="heading"><div><h2>Scenario Comparison</h2><p>Compare modelled environmental trade-offs across rotation strategies.</p></div><button class="btn ghost" onclick="openModal('method')">Model assumptions</button></div>
+ <div class="card"><div class="cardhead"><h3>Five-season strategy outcomes</h3><span class="tag">SIMULATED</span></div>
+  <div class="table-wrap"><table><thead><tr><th>Strategy</th><th>Soil trend</th><th>Water demand</th><th>Climate resilience</th><th>Suitability</th></tr></thead><tbody id="compareRows"></tbody></table></div>
+ </div>
+ <div class="grid three" style="margin-top:16px">
+  <div class="card"><div class="metric-top">BEST SOIL TREND</div><div class="metric" id="soilBest">—</div><div class="small muted" id="soilBestName">Calculating…</div></div>
+  <div class="card"><div class="metric-top">LOWEST WATER DEMAND</div><div class="metric" id="waterBest">—</div><div class="small muted" id="waterBestName">Calculating…</div></div>
+  <div class="card"><div class="metric-top">HIGHEST RESILIENCE</div><div class="metric" id="resBest">—</div><div class="small muted" id="resBestName">Calculating…</div></div>
+ </div>
+ <div class="notice" style="margin-top:16px">Strategy scores are comparative teaching indicators generated by transparent heuristics. Local cultivar, planting date, weather forecast, pest pressure, nutrient tests and management practices are not fully modelled.</div>
+</section>
+
+<section class="page" id="recommend">
+ <div class="heading"><div><h2>Explainable Recommendations</h2><p>Adjust farmer priorities to generate a transparent rotation suggestion.</p></div><button class="btn primary" onclick="recommend()">Update recommendation</button></div>
+ <div class="split">
+  <div class="card"><div class="cardhead"><h3>Farmer priorities</h3><span class="tag">PERSONALISED INPUT</span></div>
+   <div class="field"><label>Primary objective</label><select id="priority" onchange="recommend()"><option value="balanced">Balance soil health and water use</option><option value="water">Minimise water demand</option><option value="soil">Improve soil condition</option><option value="risk">Reduce climate vulnerability</option></select></div>
+   <div class="field"><label>Water availability</label><select id="waterAvail" onchange="recommend()"><option>Moderate</option><option>Low</option><option>High</option></select></div>
+   <div class="field"><label>Risk tolerance</label><select id="riskTol" onchange="recommend()"><option>Moderate</option><option>Conservative</option><option>Experimental</option></select></div>
+   <div class="field"><label>Market priority</label><select id="marketPriority" onchange="recommend()"><option>Balanced</option><option>Staple cereal production</option><option>Diversified cash crops</option></select></div>
+   <div class="notice">The recommendation is a screening aid. Validate it with a soil test, local extension guidance, market information and the upcoming seasonal forecast.</div>
+  </div>
+  <div class="card"><div class="cardhead"><h3>Current model recommendation</h3><span class="tag">MODERATE · HEURISTIC</span></div>
+   <h2 id="recName" style="margin:8px 0;font-size:24px">Balanced rotation</h2>
+   <p id="recWhy" class="muted">A diverse sequence combines cereal production with legume phases and reduces repeated-cereal pressure in the relative soil index.</p>
+   <div class="data-list" style="margin-top:14px">
+    <div class="data-row"><span>Primary trade-off</span><b id="recTrade">More complex seasonal planning</b></div>
+    <div class="data-row"><span>Water implication</span><b id="recWater">Moderate relative demand</b></div>
+    <div class="data-row"><span>Soil implication</span><b id="recSoil">Positive relative trend</b></div>
+    <div class="data-row"><span>Climate implication</span><b id="recRisk">Moderate resilience</b></div>
+   </div>
+   <div class="notice" id="recCaveat" style="margin-top:14px">Model uncertainty is material: cultivar, soil test, sowing date, pest pressure and local forecast are not included. Treat this as a screening suggestion.</div>
+  </div>
+ </div>
+</section>
+
+<section class="page" id="resources">
+ <div class="heading"><div><h2>NASA & Partner Data Resources</h2><p>Explore open Earth-observation and agricultural datasets that can strengthen field context and rotation analysis.</p></div><span class="tag">OPEN DATA CATALOGUE · 25 SOURCES</span></div>
+ <div class="resource-intro"><b>How to use this catalogue</b><p>Search by dataset, topic, provider or geographic coverage. Availability and spatial resolution vary. Several USDA and USGS resources listed here are specific to the United States and should not be treated as locally applicable soil or crop data for farms in India.</p></div>
+ <div class="resource-controls"><input id="resourceSearch" type="search" placeholder="Search datasets, e.g. soil moisture, rainfall, Sentinel-2…" oninput="filterResources()"><select id="resourceFilter" onchange="filterResources()"><option value="all">All topics</option><option>Satellite imagery</option><option>Vegetation indices</option><option>Soils</option><option>Climate</option><option>Rainfall</option><option>Water resources</option><option>Terrain</option><option>Crop suitability</option><option>Agricultural datasets</option><option>Evapotranspiration</option></select></div>
+ <div class="resource-count" id="resourceCount">25 datasets</div>
+ <div class="resource-grid" id="resourceGrid"><article class="resource-card" data-search="nasa smap nasa soil moisture global surface soil moisture and freeze/thaw measurements every 2–3 days. supports drought-stress, water-availability, infiltration and early crop-stress context."><div class="resource-meta"><span>NASA</span><span class="resource-region">Global</span></div><h3>NASA SMAP</h3><div class="resource-cat">Soil moisture</div><p>Surface soil moisture and freeze/thaw measurements every 2–3 days. Supports drought-stress, water-availability, infiltration and early crop-stress context.</p></article><article class="resource-card" data-search="nasa gpm / imerg nasa rainfall global precipitation rate and accumulation estimates for rainfall reliability, storm frequency, erosion risk and water inputs. imerg imagery can be explored through nasa worldview."><div class="resource-meta"><span>NASA</span><span class="resource-region">Global</span></div><h3>NASA GPM / IMERG</h3><div class="resource-cat">Rainfall</div><p>Precipitation rate and accumulation estimates for rainfall reliability, storm frequency, erosion risk and water inputs. IMERG imagery can be explored through NASA Worldview.</p></article><article class="resource-card" data-search="landsat nasa / usgs satellite imagery global 30 m corrected reflectance and vegetation indicators for crop vigor, bare ground, seasonal transitions and crop-stress mapping."><div class="resource-meta"><span>NASA / USGS</span><span class="resource-region">Global</span></div><h3>Landsat</h3><div class="resource-cat">Satellite imagery</div><p>30 m corrected reflectance and vegetation indicators for crop vigor, bare ground, seasonal transitions and crop-stress mapping.</p></article><article class="resource-card" data-search="modis / viirs nasa / noaa vegetation indices global 250–1000 m reflectance, ndvi and vegetation indicators for seasonal change and broad crop-condition context."><div class="resource-meta"><span>NASA / NOAA</span><span class="resource-region">Global</span></div><h3>MODIS / VIIRS</h3><div class="resource-cat">Vegetation indices</div><p>250–1000 m reflectance, NDVI and vegetation indicators for seasonal change and broad crop-condition context.</p></article><article class="resource-card" data-search="nasa power nasa climate global solar and meteorological datasets, including temperature and radiation, for growing-season conditions, crop-water-use context and climate suitability."><div class="resource-meta"><span>NASA</span><span class="resource-region">Global</span></div><h3>NASA POWER</h3><div class="resource-cat">Climate</div><p>Solar and meteorological datasets, including temperature and radiation, for growing-season conditions, crop-water-use context and climate suitability.</p></article><article class="resource-card" data-search="srtm nasa / usgs terrain global elevation and terrain models for slope, runoff, erosion risk, water flow and terrain-related stress."><div class="resource-meta"><span>NASA / USGS</span><span class="resource-region">Global</span></div><h3>SRTM</h3><div class="resource-cat">Terrain</div><p>Elevation and terrain models for slope, runoff, erosion risk, water flow and terrain-related stress.</p></article><article class="resource-card" data-search="ecostress nasa land temperature / et selected coverage land-surface temperature and evapotranspiration at high spatial resolution to identify heat hotspots, plant stress and crop-water demand."><div class="resource-meta"><span>NASA</span><span class="resource-region">Selected coverage</span></div><h3>ECOSTRESS</h3><div class="resource-cat">Land temperature / ET</div><p>Land-surface temperature and evapotranspiration at high spatial resolution to identify heat hotspots, plant stress and crop-water demand.</p></article><article class="resource-card" data-search="usda ag data commons usda agricultural datasets united states open datasets covering soils, crops, climate, land management, phenology, water quality and ecological conditions."><div class="resource-meta"><span>USDA</span><span class="resource-region">United States</span></div><h3>USDA Ag Data Commons</h3><div class="resource-cat">Agricultural datasets</div><p>Open datasets covering soils, crops, climate, land management, phenology, water quality and ecological conditions.</p></article><article class="resource-card" data-search="web soil survey (wss) usda nrcs soils united states official soil maps and properties, drainage, erosion risk, hydrologic ratings and land-use suitability."><div class="resource-meta"><span>USDA NRCS</span><span class="resource-region">United States</span></div><h3>Web Soil Survey (WSS)</h3><div class="resource-cat">Soils</div><p>Official soil maps and properties, drainage, erosion risk, hydrologic ratings and land-use suitability.</p></article><article class="resource-card" data-search="cropland data layer (cdl) / cropscape usda nass crop classification united states annual 30 m cropland classifications for crop types and seasonal cropping-pattern analysis."><div class="resource-meta"><span>USDA NASS</span><span class="resource-region">United States</span></div><h3>Cropland Data Layer (CDL) / CropScape</h3><div class="resource-cat">Crop classification</div><p>Annual 30 m cropland classifications for crop types and seasonal cropping-pattern analysis.</p></article><article class="resource-card" data-search="prism climate data oregon state university climate united states daily, monthly and 30-year climate normals for precipitation, temperature, dewpoint and frost/freeze dates."><div class="resource-meta"><span>Oregon State University</span><span class="resource-region">United States</span></div><h3>PRISM Climate Data</h3><div class="resource-cat">Climate</div><p>Daily, monthly and 30-year climate normals for precipitation, temperature, dewpoint and frost/freeze dates.</p></article><article class="resource-card" data-search="ssurgo / statsgo2 usda nrcs soils united states field- and regional-scale soil attributes including texture, organic matter, drainage, hydrologic group, erosion factors and water-holding capacity."><div class="resource-meta"><span>USDA NRCS</span><span class="resource-region">United States</span></div><h3>SSURGO / STATSGO2</h3><div class="resource-cat">Soils</div><p>Field- and regional-scale soil attributes including texture, organic matter, drainage, hydrologic group, erosion factors and water-holding capacity.</p></article><article class="resource-card" data-search="national agriculture imagery program (naip) usda aerial imagery united states typically 1 m aerial imagery for field boundaries, bare-soil periods, crop development and land-management changes."><div class="resource-meta"><span>USDA</span><span class="resource-region">United States</span></div><h3>National Agriculture Imagery Program (NAIP)</h3><div class="resource-cat">Aerial imagery</div><p>Typically 1 m aerial imagery for field boundaries, bare-soil periods, crop development and land-management changes.</p></article><article class="resource-card" data-search="national land cover database (nlcd) usgs land cover united states 30 m multi-decade land-cover classifications for farmland, pasture, forest, water, wetlands and development."><div class="resource-meta"><span>USGS</span><span class="resource-region">United States</span></div><h3>National Land Cover Database (NLCD)</h3><div class="resource-cat">Land cover</div><p>30 m multi-decade land-cover classifications for farmland, pasture, forest, water, wetlands and development.</p></article><article class="resource-card" data-search="nldas / gldas nasa and partners land data assimilation regional / global products gridded temperature, precipitation, soil moisture, evapotranspiration proxies and radiation for drought and moisture-deficit time series."><div class="resource-meta"><span>NASA and partners</span><span class="resource-region">Regional / global products</span></div><h3>NLDAS / GLDAS</h3><div class="resource-cat">Land data assimilation</div><p>Gridded temperature, precipitation, soil moisture, evapotranspiration proxies and radiation for drought and moisture-deficit time series.</p></article><article class="resource-card" data-search="fao global agro-ecological zones (gaez) fao crop suitability global agro-climatic crop suitability, soil constraints, water availability, yield potential and land-productivity assessments."><div class="resource-meta"><span>FAO</span><span class="resource-region">Global</span></div><h3>FAO Global Agro-Ecological Zones (GAEZ)</h3><div class="resource-cat">Crop suitability</div><p>Agro-climatic crop suitability, soil constraints, water availability, yield potential and land-productivity assessments.</p></article><article class="resource-card" data-search="cocorahs community network rainfall observations north america crowdsourced daily precipitation observations that can help validate satellite rainfall and identify local rain events."><div class="resource-meta"><span>Community network</span><span class="resource-region">North America</span></div><h3>CoCoRaHS</h3><div class="resource-cat">Rainfall observations</div><p>Crowdsourced daily precipitation observations that can help validate satellite rainfall and identify local rain events.</p></article><article class="resource-card" data-search="usgs national water information system (nwis) usgs water resources united states long-term groundwater, streamflow, river-stage and water-quality records for irrigation and hydrologic context."><div class="resource-meta"><span>USGS</span><span class="resource-region">United States</span></div><h3>USGS National Water Information System (NWIS)</h3><div class="resource-cat">Water resources</div><p>Long-term groundwater, streamflow, river-stage and water-quality records for irrigation and hydrologic context.</p></article><article class="resource-card" data-search="usda ams market news usda market information united states commodity prices, demand trends and market conditions to assess crop-market viability."><div class="resource-meta"><span>USDA</span><span class="resource-region">United States</span></div><h3>USDA AMS Market News</h3><div class="resource-cat">Market information</div><p>Commodity prices, demand trends and market conditions to assess crop-market viability.</p></article><article class="resource-card" data-search="usda nass quickstats usda nass agricultural statistics united states state- and county-level yields, planted acreage, production history and crop-frequency statistics."><div class="resource-meta"><span>USDA NASS</span><span class="resource-region">United States</span></div><h3>USDA NASS QuickStats</h3><div class="resource-cat">Agricultural statistics</div><p>State- and county-level yields, planted acreage, production history and crop-frequency statistics.</p></article><article class="resource-card" data-search="openet openet partners evapotranspiration western united states satellite-driven field-scale evapotranspiration estimates for irrigation timing, water-use efficiency and crop-water stress."><div class="resource-meta"><span>OpenET partners</span><span class="resource-region">Western United States</span></div><h3>OpenET</h3><div class="resource-cat">Evapotranspiration</div><p>Satellite-driven field-scale evapotranspiration estimates for irrigation timing, water-use efficiency and crop-water stress.</p></article><article class="resource-card" data-search="usfs landfire us forest service vegetation / fuels united states vegetation type, condition, fuel models and landscape characteristics relevant to ecosystems, water flow and biodiversity."><div class="resource-meta"><span>US Forest Service</span><span class="resource-region">United States</span></div><h3>USFS LANDFIRE</h3><div class="resource-cat">Vegetation / fuels</div><p>Vegetation type, condition, fuel models and landscape characteristics relevant to ecosystems, water flow and biodiversity.</p></article><article class="resource-card" data-search="gedi nasa forest structure global coverage laser-based canopy height, leaf-area and biomass products that add vegetation-structure context around agricultural landscapes."><div class="resource-meta"><span>NASA</span><span class="resource-region">Global coverage</span></div><h3>GEDI</h3><div class="resource-cat">Forest structure</div><p>Laser-based canopy height, leaf-area and biomass products that add vegetation-structure context around agricultural landscapes.</p></article><article class="resource-card" data-search="copernicus sentinel-2 european space agency satellite imagery global free 10–20 m multispectral imagery with red-edge, nir and swir bands for ndvi/evi, bare-soil mapping and crop-stress monitoring."><div class="resource-meta"><span>European Space Agency</span><span class="resource-region">Global</span></div><h3>Copernicus Sentinel-2</h3><div class="resource-cat">Satellite imagery</div><p>Free 10–20 m multispectral imagery with red-edge, NIR and SWIR bands for NDVI/EVI, bare-soil mapping and crop-stress monitoring.</p></article><article class="resource-card" data-search="era5 ecmwf climate reanalysis global hourly temperature, precipitation, wind, humidity, soil temperature and radiation for climate trends and time-series context."><div class="resource-meta"><span>ECMWF</span><span class="resource-region">Global</span></div><h3>ERA5</h3><div class="resource-cat">Climate reanalysis</div><p>Hourly temperature, precipitation, wind, humidity, soil temperature and radiation for climate trends and time-series context.</p></article></div>
+ <div class="notice" style="margin-top:16px">Data integration note: these are resource references, not all live-connected services in this prototype. Current live integrations remain NASA POWER climate retrieval and NASA GIBS visual layers. Some listed services have geographic limits, access conditions or different update frequencies.</div>
+</section>
+
+<section class="page" id="reports">
+ <div class="heading"><div><h2>Reports & Export</h2><p>Generate a field briefing and export the data used in this session.</p></div><button class="btn primary" onclick="generateReport()">Generate field briefing</button></div>
+ <div class="split">
+  <div class="card"><div class="cardhead"><h3>Field briefing</h3><span class="tag">EXPORTABLE</span></div><textarea id="reportOutput" rows="18" readonly></textarea>
+   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" onclick="downloadReport()">Download briefing</button><button class="btn ghost" onclick="exportClimateCsv()">Export climate CSV</button><button class="btn ghost" onclick="exportFarmJson()">Export farm profile</button><button class="btn ghost" onclick="window.print()">Print / PDF</button></div>
+  </div>
+  <div class="card"><div class="cardhead"><h3>Data provenance</h3><span class="tag">AUDITABLE</span></div>
+   <div class="data-list">
+    <div class="data-row"><span>Field map</span><b id="provMap">Leaflet · Esri / OpenStreetMap</b></div>
+    <div class="data-row"><span>Satellite basemap</span><b>Esri World Imagery</b></div>
+    <div class="data-row"><span>Vegetation context</span><b>NASA GIBS · MODIS</b></div>
+    <div class="data-row"><span>Climate observations</span><b id="provPower">Not yet retrieved</b></div>
+    <div class="data-row"><span>Farm profile</span><b>Browser local storage</b></div>
+    <div class="data-row"><span>Rotation model</span><b>Transparent rule-based heuristics</b></div>
+    <div class="data-row"><span>Yield prediction</span><b class="warn">Not provided</b></div>
+   </div>
+   <div class="notice" style="margin-top:12px">For a production system, connect authenticated farm boundaries, Sentinel-2/Landsat analytics through Google Earth Engine, soil-test records, weather forecasts and field-scout observations with explicit user consent and data governance.</div>
+  </div>
+ </div>
+</section>
+
+<div class="sitefoot">TERRA-SYNC · Research prototype for demonstration · No claim of Google, NASA, Esri or government endorsement · Measured data, estimates and simulations are explicitly distinguished.</div>
+</div>
+</main>
+</div>
+
+<div class="modalback" id="modalBack" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modalhead"><h3 id="modalTitle">Information</h3><button class="x" onclick="closeModal()">✕</button></div><div id="modalBody"></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const titles={home:'Workspace selection',overview:'Farm intelligence overview',explorer:'Field Explorer',satellite:'Satellite Intelligence',climate:'Climate & Weather',twin:'Farm Digital Twin',visual:'Farm Visualisation',lab:'Crop Rotation Simulation Lab',compare:'Scenario Comparison',recommend:'Explainable Recommendations',resources:'NASA & Partner Data Resources',reports:'Reports & Export'};
+const sample={lat:10.78,lon:76.65,name:'Palakkad Demo A',area:2.4};
+let current='home';
+let overviewLeaflet,satelliteLeaflet,explorerLeaflet,explorerMarker,explorerBaseLayer,gibsOverlay=null;
+let fieldMarker,fieldPolygon,baseLayerInstance,gibsLayerInstance;
+let climateChart,rotationChart,soilChart,waterChart,twinChart;
+let powerData=null,selected='balanced';
+
+const configs={
+ balanced:{name:'Balanced rotation',seq:['Rice','Pulses','Maize','Groundnut','Rice'],soil:18,water:8,res:82,suit:84},
+ cereal:{name:'Cereal intensive',seq:['Rice','Maize','Rice','Maize','Rice'],soil:-9,water:20,res:55,suit:67},
+ legume:{name:'Legume-forward',seq:['Pulses','Groundnut','Millet','Pulses','Rice'],soil:24,water:-12,res:86,suit:79}
+};
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+function v(id){const el=document.getElementById(id);return el?el.value:''}
+function num(id){const x=parseFloat(v(id));return isFinite(x)?x:0}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
+function go(id,push=true){if(!titles[id])id='home';current=id;applyView(id);document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));document.getElementById('pageTitle').textContent=titles[id];if(push&&location.hash!=='#'+id)location.hash='#'+id;if(id==='explorer')setTimeout(()=>{if(explorerLeaflet)explorerLeaflet.invalidateSize()},60);if(id==='satellite')setTimeout(()=>{if(satelliteLeaflet)satelliteLeaflet.invalidateSize()},60);if(id==='overview')setTimeout(()=>{if(overviewLeaflet)overviewLeaflet.invalidateSize()},60);if(id==='twin')updateTwin();if(id==='visual')renderFarmVisual();if(id==='compare')renderCompare();if(id==='lab')renderSimulation();window.scrollTo({top:0,behavior:'smooth'})}
+
+const accents={"overview": "#57d39b", "explorer": "#5aa9ff", "satellite": "#b48cff", "climate": "#55c9d8", "twin": "#f0bd69", "visual": "#7ad36b", "lab": "#ff9f6b", "compare": "#ef887b", "recommend": "#e58cff", "reports": "#8fb3c9"};
+const order=['overview','explorer','satellite','climate','twin','visual','lab','compare','recommend','resources','reports'];
+const shortName={overview:'Overview',explorer:'Field Explorer',satellite:'Satellite',climate:'Climate',twin:'Digital Twin',visual:'Visualisation',lab:'Rotation Lab',compare:'Compare',recommend:'Recommend',resources:'Resources',reports:'Reports'};
+(function buildChrome(){
+ order.forEach((id,i)=>{const sec=document.getElementById(id);if(!sec)return;
+  const tabs=document.createElement('div');tabs.className='dashtabs';
+  order.forEach(o=>{const a=document.createElement('a');a.textContent=shortName[o];a.dataset.to=o;if(o===id)a.className='on';a.onclick=()=>go(o);tabs.appendChild(a)});
+  sec.insertBefore(tabs,sec.firstChild);
+  const pager=document.createElement('div');pager.className='pager';
+  const prev=document.createElement('button');prev.className='btn';prev.textContent=i>0?'← '+shortName[order[i-1]]:'← Home';prev.onclick=()=>go(i>0?order[i-1]:'home');
+  const next=document.createElement('button');next.className='btn primary';next.textContent=i<order.length-1?shortName[order[i+1]]+' →':'Back to Home ⌂';next.onclick=()=>go(i<order.length-1?order[i+1]:'home');
+  pager.append(prev,next);sec.appendChild(pager);});
+})();
+function applyView(id){const c=accents[id]||'#57d39b';document.body.dataset.view=id==='home'?'landing':'dash';
+ document.body.style.setProperty('--green',id==='home'?'#57d39b':c);
+ const cn=document.getElementById('crumbNow');if(cn)cn.textContent=titles[id]||'';
+ document.title=(id==='home'?'':(titles[id]+' · '))+'TERRA-SYNC';}
+document.body.dataset.view='landing';
+function goBack(){if(history.length>1)history.back();else go('home')}
+window.addEventListener('hashchange',()=>{const id=location.hash.replace(/^#\/?/,'')||'home';if(id!==current)go(id,false)});
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>go(b.dataset.page)));
+
+function openModal(type){
+ const title=document.getElementById('modalTitle'),body=document.getElementById('modalBody');body.textContent='';
+ if(type==='help'){title.textContent='Data provenance & limitations';
+  const p1=document.createElement('p');p1.textContent='Live data: NASA POWER daily climate observations are retrieved directly from the NASA POWER API for the selected coordinate. Values are shown only after a successful response.';
+  const p2=document.createElement('p');p2.textContent='Field maps: Leaflet with Esri World Imagery and OpenStreetMap tiles. No open maps API key or billing account is required. Place search uses OpenStreetMap Nominatim.';
+  const p3=document.createElement('p');p3.textContent='Satellite overlays: MODIS NDVI, SMAP L4 soil moisture and GPM IMERG rainfall are displayed as NASA GIBS map layers when selected. They are regional raster context, not field-boundary averages. Resilience, suitability and rotation outcomes remain simulated heuristic estimates.';
+  const p4=document.createElement('p');p4.textContent='Farm visualisation: the schematic layout is generated from user inputs and the selected rotation. It is not a surveyed, legal or cadastral farm map.';
+  const p5=document.createElement('p');p5.textContent='Rotation model: transparent crop-group, soil-condition, irrigation and prior-crop heuristics compare broad strategies. They are not calibrated crop-growth simulations, yield forecasts or fertiliser prescriptions.';
+  body.append(p1,p2,p3,p4,p5);}
+ if(type==='boundary'){title.textContent='Field boundary';const p=document.createElement('p');p.textContent='The demonstration parcel is an illustrative 2.4 ha field near Palakkad, Kerala. It is not a legal or cadastral boundary.';const b=document.createElement('button');b.className='btn primary';b.textContent='Use Palakkad Demo A · 2.4 ha';b.addEventListener('click',()=>{closeModal();useSampleField()});body.append(p,b);}
+ if(type==='method'){title.textContent='Simulation model assumptions';const ul=document.createElement('ul');['Legume phases receive a positive relative soil-nitrogen contribution.','Repeated cereal phases apply a relative nutrient-pressure penalty.','Water demand is ranked using broad crop-group assumptions.','Soil pH, organic carbon, texture, irrigation and prior crops adjust the heuristic outcomes.','Climate resilience reflects crop diversity and water-demand assumptions.'].forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li)});const p=document.createElement('p');p.textContent='These coefficients are illustrative, not calibrated to a location-specific field experiment. No yield prediction is made.';body.append(ul,p);}
+ document.getElementById('modalBack').classList.add('open');
+}
+function closeModal(){document.getElementById('modalBack').classList.remove('open')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+function initBaseMaps(){
+ const start=[sample.lat,sample.lon];
+ overviewLeaflet=L.map('overviewMap',{zoomControl:true}).setView(start,14);
+ satelliteLeaflet=L.map('satelliteMap',{zoomControl:true}).setView(start,13);
+ explorerLeaflet=L.map('explorerMap',{zoomControl:true}).setView(start,15);
+ [overviewLeaflet,satelliteLeaflet].forEach(m=>{L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'}).addTo(m)});
+ explorerBaseLayer=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'}).addTo(explorerLeaflet);
+ explorerMarker=L.marker(start,{draggable:true}).addTo(explorerLeaflet).bindPopup('Selected analysis point');
+ explorerMarker.on('dragend',()=>{const p=explorerMarker.getLatLng();setLocation(p.lat,p.lng)});
+ explorerLeaflet.on('click',e=>setLocation(e.latlng.lat,e.latlng.lng));
+ const bounds=[[10.765,76.635],[10.795,76.665]];
+ fieldPolygon=L.polygon(bounds,{color:'#57d39b',weight:3,fillColor:'#57d39b',fillOpacity:.18}).addTo(overviewLeaflet);
+ const d=new Date();d.setDate(d.getDate()-8);document.getElementById('gibsDate').value=d.toISOString().slice(0,10);
+ setBaseLayer('esri');
+}
+function setLocation(lat,lon){
+ sample.lat=lat;sample.lon=lon;
+ document.getElementById('latOut').textContent=lat.toFixed(6);
+ document.getElementById('lonOut').textContent=lon.toFixed(6);
+ document.getElementById('climLat').value=lat.toFixed(6);
+ document.getElementById('climLon').value=lon.toFixed(6);
+ document.getElementById('satCoords').textContent=Math.abs(lat).toFixed(4)+'°'+(lat>=0?'N':'S')+', '+Math.abs(lon).toFixed(4)+'°'+(lon>=0?'E':'W');
+ document.getElementById('powerCoordNote').textContent=Math.abs(lat).toFixed(4)+'°'+(lat>=0?'N':'S')+', '+Math.abs(lon).toFixed(4)+'°'+(lon>=0?'E':'W');
+ document.getElementById('locationPill').textContent='⌖ '+lat.toFixed(4)+'°, '+lon.toFixed(4)+'°';
+ if(explorerMarker)explorerMarker.setLatLng([lat,lon]);
+ if(explorerLeaflet)explorerLeaflet.panTo([lat,lon]);
+ if(satelliteLeaflet)satelliteLeaflet.panTo([lat,lon]);
+}
+function useSampleField(){setLocation(sample.lat,sample.lon);toast('Sample field selected: Palakkad Demo A · 2.4 ha')}
+function locateMe(){if(!navigator.geolocation){toast('Geolocation unavailable');return}toast('Requesting device location…');navigator.geolocation.getCurrentPosition(p=>{setLocation(p.coords.latitude,p.coords.longitude);toast('Analysis point updated from device location')},()=>toast('Location permission denied or unavailable'),{enableHighAccuracy:true,timeout:10000})}
+function copyCoords(){const text=sample.lat.toFixed(6)+', '+sample.lon.toFixed(6);navigator.clipboard.writeText(text).then(()=>toast('Coordinates copied')).catch(()=>toast('Copy unavailable'))}
+
+function setExplorerBase(kind){
+ if(!explorerLeaflet)return;
+ if(explorerBaseLayer)explorerLeaflet.removeLayer(explorerBaseLayer);
+ explorerBaseLayer=kind==='osm'
+  ?L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'})
+  :L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'});
+ explorerBaseLayer.addTo(explorerLeaflet);
+}
+async function searchPlace(){
+ const q=v('placeSearch').trim();if(!q){toast('Enter a place to search');return}
+ toast('Searching OpenStreetMap…');
+ try{
+  const url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(q);
+  const r=await fetch(url,{headers:{'Accept':'application/json'}});if(!r.ok)throw new Error('Search service returned '+r.status);
+  const results=await r.json();if(!results.length)throw new Error('No matching place found');
+  const p=results[0],lat=Number(p.lat),lon=Number(p.lon);setLocation(lat,lon);
+  explorerLeaflet.setView([lat,lon],15);explorerMarker.bindPopup(p.display_name).openPopup();
+  toast('Location found: '+p.display_name.split(',').slice(0,2).join(','));
+ }catch(e){toast('Place search unavailable: '+e.message)}
+}
+function setBaseLayer(kind){
+ if(!satelliteLeaflet)return;
+ if(baseLayerInstance)satelliteLeaflet.removeLayer(baseLayerInstance);
+ if(kind==='osm')baseLayerInstance=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});
+ else baseLayerInstance=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'});
+ baseLayerInstance.addTo(satelliteLeaflet);
+ if(gibsLayerInstance)gibsLayerInstance.bringToFront();
+}
+function setGibsLayer(kind){
+ if(!satelliteLeaflet)return;
+ if(gibsLayerInstance){satelliteLeaflet.removeLayer(gibsLayerInstance);gibsLayerInstance=null}
+ const date=v('gibsDate')||new Date().toISOString().slice(0,10);
+ const opacity=num('gibsOpacity')/100;
+ if(kind==='ndvi'){gibsLayerInstance=L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_NDVI_8Day/default/'+date+'/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png',{maxZoom:9,opacity:opacity,attribution:'NASA GIBS / MODIS Terra'});document.getElementById('activeGibs').textContent='MODIS NDVI';document.getElementById('gibsLegend').textContent='Green: higher vegetation index'}
+ else if(kind==='lst'){gibsLayerInstance=L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_Land_Surface_Temp_Day/default/'+date+'/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png',{maxZoom:7,opacity:opacity,attribution:'NASA GIBS / MODIS Terra'});document.getElementById('activeGibs').textContent='MODIS LST';document.getElementById('gibsLegend').textContent='Thermal surface-temperature context'}
+ else if(kind==='smap'||kind==='smap_surface'){const layer=kind==='smap'?'SMAP_L4_Analyzed_Root_Zone_Soil_Moisture':'SMAP_L4_Analyzed_Surface_Soil_Moisture';gibsLayerInstance=L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/'+layer+'/default/'+date+'/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',{maxZoom:6,opacity:opacity,attribution:'NASA GIBS / SMAP L4'});document.getElementById('activeGibs').textContent=kind==='smap'?'SMAP root-zone moisture':'SMAP surface moisture';document.getElementById('gibsLegend').textContent='SMAP L4 model-assimilated soil moisture · regional 9 km grid'}
+ else if(kind==='imerg'){gibsLayerInstance=L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Rain_Rate/default/'+date+'/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',{maxZoom:6,opacity:opacity,attribution:'NASA GIBS / GPM IMERG'});document.getElementById('activeGibs').textContent='GPM IMERG rainfall';document.getElementById('gibsLegend').textContent='Satellite precipitation rate · mm/hr'}
+ else{document.getElementById('activeGibs').textContent='None';document.getElementById('gibsLegend').textContent='No overlay'}
+ if(gibsLayerInstance)gibsLayerInstance.addTo(satelliteLeaflet);
+}
+function setOpacity(val){if(gibsLayerInstance)gibsLayerInstance.setOpacity(val/100)}
+function refreshSatellite(){setBaseLayer(v('baseLayer'));setGibsLayer(v('gibsLayer'));toast('Satellite layers refreshed')}
+
+function fmtDate(d){return d.toISOString().slice(0,10).replaceAll('-','')}
+async function loadPower(){
+ const status=document.getElementById('powerStatus'),out=document.getElementById('powerOutput'),btn=document.getElementById('powerBtn');
+ const lat=num('climLat'),lon=num('climLon');
+ if(!isFinite(lat)||!isFinite(lon)){toast('Enter a valid analysis coordinate');return}
+ status.textContent='Requesting…';status.className='status warn';out.textContent='Contacting NASA POWER API…';btn.disabled=true;
+ try{
+  const end=new Date(),start=new Date(end);start.setDate(start.getDate()-(parseInt(v('climateRange'))||30));
+  const url='https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,T2M_MAX,T2M_MIN,PRECTOTCORR,ALLSKY_SFC_SW_DWN&community=AG&longitude='+lon+'&latitude='+lat+'&start='+fmtDate(start)+'&end='+fmtDate(end)+'&format=JSON';
+  const r=await fetch(url);if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json(),p=j.properties.parameter;
+  const dates=Object.keys(p.T2M||{}).sort();if(!dates.length)throw new Error('No daily records returned');
+  powerData={lat,lon,dates,params:p,retrieved:new Date().toISOString()};
+  const temps=dates.map(d=>p.T2M[d]);const rain=dates.map(d=>p.PRECTOTCORR[d]||0);const solar=dates.map(d=>p.ALLSKY_SFC_SW_DWN[d]||0);
+  const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;const totalRain=rain.reduce((x,y)=>x+y,0);
+  document.getElementById('climT').textContent=mean(temps).toFixed(1)+' °C';
+  document.getElementById('climP').textContent=totalRain.toFixed(1)+' mm';
+  document.getElementById('climS').textContent=mean(solar).toFixed(1)+' kWh/m²/day';
+  document.getElementById('climDry').textContent=rain.filter(x=>x<1).length;
+  document.getElementById('kpiRain').textContent=totalRain.toFixed(1)+' mm';
+  document.getElementById('kpiRainNote').textContent='NASA POWER live · '+dates[0]+' to '+dates[dates.length-1];
+  document.getElementById('envTmax').textContent=mean(dates.map(d=>p.T2M_MAX[d]||p.T2M[d])).toFixed(1)+' °C';
+  document.getElementById('envTmin').textContent=mean(dates.map(d=>p.T2M_MIN[d]||p.T2M[d])).toFixed(1)+' °C';
+  document.getElementById('envRain').textContent=totalRain.toFixed(1)+' mm';
+  document.getElementById('envSolar').textContent=mean(solar).toFixed(1)+' kWh/m²/day';
+  document.getElementById('dataModeTag').textContent='NASA POWER LIVE';
+  document.getElementById('provPower').textContent='NASA POWER · '+dates[0]+' to '+dates[dates.length-1];
+  if(climateChart)climateChart.destroy();
+  climateChart=new Chart(document.getElementById('climateChart'),{type:'line',data:{labels:dates,datasets:[{label:'Mean temperature (°C)',data:temps,borderColor:'#57d39b',backgroundColor:'rgba(87,211,155,.10)',fill:true,tension:.3,pointRadius:2},{label:'Precipitation (mm)',data:rain,borderColor:'#55c9d8',backgroundColor:'rgba(85,201,216,.10)',fill:true,tension:.3,pointRadius:2,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#91aaa8'}}},scales:{x:{ticks:{color:'#91aaa8',maxTicksLimit:8}},y:{position:'left',title:{display:true,text:'Temperature (°C)'},ticks:{color:'#91aaa8'}},y1:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Precipitation (mm)'},ticks:{color:'#91aaa8'}}}}});
+  out.textContent='';const head=document.createElement('div');head.className='small muted';head.textContent='NASA POWER · '+dates.length+' daily records · '+dates[0]+' to '+dates[dates.length-1];
+  const grid=document.createElement('div');grid.className='grid three';grid.style.marginTop='12px';
+  [['Air temperature',mean(temps).toFixed(1)+' °C'],['Precipitation',totalRain.toFixed(1)+' mm total'],['Solar radiation',mean(solar).toFixed(1)+' kWh/m²/day']].forEach(x=>{const d=document.createElement('div');const l=document.createElement('div');l.className='small muted';l.textContent=x[0];const b=document.createElement('b');b.textContent=x[1];d.append(l,b);grid.appendChild(d)});
+  const note=document.createElement('p');note.className='footnote';note.textContent='Source: NASA POWER API. Coordinate: '+lat.toFixed(4)+'°N, '+lon.toFixed(4)+'°E. Units: °C, mm/day, kWh/m²/day. Retrieved '+new Date().toLocaleString()+'.';
+  out.append(head,grid,note);
+  status.textContent='Retrieved successfully';status.className='status';toast('NASA POWER data retrieved');
+ }catch(e){status.textContent='Unavailable';status.className='status bad';out.textContent='NASA POWER request could not be completed from this browser/network ('+e.message+'). No live values have been invented. Check internet access or use the NASA POWER portal.';toast('NASA POWER request failed')}
+ finally{btn.disabled=false}
+}
+function exportClimateCsv(){if(!powerData){toast('Retrieve NASA POWER data first');return}const rows=[['date','mean_temperature_c','max_temperature_c','min_temperature_c','precipitation_mm','solar_radiation_kwh_m2_day']];powerData.dates.forEach(d=>{const p=powerData.params;rows.push([d,p.T2M[d],p.T2M_MAX[d],p.T2M_MIN[d],p.PRECTOTCORR[d],p.ALLSKY_SFC_SW_DWN[d]])});downloadCsv('terra_sync_nasa_power.csv',rows)}
+function downloadCsv(name,rows){const csv=rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);toast('Export started')}
+
+const farm={soil:'Loam',ph:6.2,carbon:1.2,area:2.4,crop:'Rice',irrigation:'Seasonal / limited',history:'Rice → Rice → Rice'};
+function readFarm(){farm.soil=v('soil')||'Loam';farm.ph=clamp(num('ph')||6.5,3,10);farm.carbon=clamp(num('carbon'),0,10);farm.area=Math.max(0.1,num('area')||2.4);farm.crop=v('crop')||'Rice';farm.irrigation=v('irrigation')||'Seasonal / limited';farm.history=v('history')||''}
+function computeStrategy(key){
+ readFarm();const c=configs[key];let soil=c.soil,water=c.water,res=c.res,suit=c.suit;const notes=[];
+ const phDev=Math.abs(farm.ph-6.5);const phPen=Math.min(15,phDev*6);soil-=phPen;suit-=phPen*.8;res-=phPen*.5;
+ if(phDev>1)notes.push('Soil pH '+farm.ph+' is outside the near-neutral range used by this screening heuristic, reducing relative soil and suitability scores.');
+ const carbonBonus=Math.min(10,farm.carbon*4);soil+=carbonBonus;suit+=carbonBonus*.5;res+=carbonBonus*.4;
+ if(farm.carbon>=1.5)notes.push('Organic carbon at '+farm.carbon+'% supports a relatively better soil-health trend in this heuristic.');
+ const textureAdj={Loam:4,'Sandy loam':0,'Clay loam':1,Clay:-3,Lateritic:-5}[farm.soil]||0;soil+=textureAdj;suit+=textureAdj*.6;res+=textureAdj*.4;
+ const irrAdj={Reliable:-5,'Seasonal / limited':0,'Rainfed only':8}[farm.irrigation]||0;water+=irrAdj;if(irrAdj>0)res-=irrAdj*.6;
+ if(farm.irrigation==='Rainfed only')notes.push('Rainfed conditions increase relative water-demand pressure in this heuristic.');
+ const hist=farm.history.toLowerCase();const cerealCount=(hist.match(/rice|maize/g)||[]).length;const legumeCount=(hist.match(/pulse|groundnut|bean|gram/g)||[]).length;
+ const histPen=Math.min(10,cerealCount*2),histBonus=Math.min(8,legumeCount*2);soil-=histPen;soil+=histBonus;suit-=histPen*.5;suit+=histBonus*.4;
+ if(cerealCount>=2)notes.push('Repeated cereal crops in the entered history add relative nutrient pressure.');
+ if(legumeCount>0)notes.push('Legume crops in the entered history provide a relative soil-health benefit in this heuristic.');
+ if(c.seq.indexOf(farm.crop)>-1){suit+=3;notes.push('The currently selected crop, '+farm.crop+', appears in this rotation, supporting cropping continuity.')}
+ return{key,name:c.name,seq:c.seq,soil:Math.round(clamp(soil,-40,40)*10)/10,water:Math.round(clamp(water,-40,40)*10)/10,res:Math.round(clamp(res,0,100)),suit:Math.round(clamp(suit,0,100)),notes}
+}
+function allResults(){return Object.keys(configs).map(k=>computeStrategy(k))}
+function updateTwin(){
+ readFarm();const list=document.getElementById('twinSummary');list.textContent='';
+ [['Soil texture',farm.soil],['pH',farm.ph],['Organic carbon',farm.carbon+'%'],['Area',farm.area+' ha'],['Current crop',farm.crop],['Irrigation',farm.irrigation],['Previous crops',farm.history]].forEach(row=>{const d=document.createElement('div');d.className='data-row';const a=document.createElement('span');a.textContent=row[0];const b=document.createElement('b');b.textContent=row[1];d.append(a,b);list.appendChild(d)});
+ const soilScore={Loam:82,'Sandy loam':70,'Clay loam':74,Clay:66,Lateritic:61}[farm.soil]||70;
+ const phScore=clamp(100-Math.abs(farm.ph-6.5)*18,0,100);
+ const carbonScore=clamp(farm.carbon*22+35,0,100);
+ const irrigationScore={Reliable:88,'Seasonal / limited':68,'Rainfed only':48}[farm.irrigation]||60;
+ document.getElementById('kpiRes').textContent=Math.round(soilScore*.3+phScore*.2+carbonScore*.25+irrigationScore*.25)+'/100';
+ document.getElementById('envCrop').textContent=farm.crop;document.getElementById('envIrr').textContent=farm.irrigation;
+ if(twinChart)twinChart.destroy();
+ twinChart=new Chart(document.getElementById('twinChart'),{type:'radar',data:{labels:['Soil texture','pH suitability','Organic carbon','Water access'],datasets:[{label:'Field resilience screen',data:[soilScore,phScore,carbonScore,irrigationScore],borderColor:'#57d39b',backgroundColor:'rgba(87,211,155,.16)',pointBackgroundColor:'#57d39b'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,ticks:{color:'#91aaa8',backdropColor:'transparent'},grid:{color:'#1c3b43'},pointLabels:{color:'#c8e6dd'}}}}});
+}
+function saveFarm(){readFarm();try{localStorage.setItem('terraSyncFarm',JSON.stringify(farm));toast('Farm profile saved in this browser')}catch(e){toast('Local storage unavailable')}}
+function loadFarm(){try{const raw=localStorage.getItem('terraSyncFarm');if(!raw)return;const p=JSON.parse(raw);['soil','ph','carbon','area','crop','irrigation','history'].forEach(k=>{if(p[k]!==undefined)document.getElementById(k).value=p[k]})}catch(e){}}
+function selectStrategy(key){selected=key;document.querySelectorAll('.strategy').forEach(x=>x.classList.toggle('selected',x.dataset.strategy===key));renderSimulation();renderFarmVisual()}
+function runSimulation(){renderSimulation();toast('Five-season scenario simulation updated')}
+function seasonValue(key,n){const r=computeStrategy(key);return{soil:Math.round(100+r.soil*n/5),water:Math.round(100+r.water*n/5),res:Math.round(60+(r.res-60)*n/5)}}
+function updateSeason(val){document.getElementById('seasonLabel').textContent='Season '+val+' / 5';renderSeason(val)}
+function renderSeason(n){const x=seasonValue(selected,parseInt(n));const box=document.getElementById('seasonMetrics');box.textContent='';[['Soil nutrient index',x.soil],['Relative water demand',x.water],['Climate resilience',x.res]].forEach(a=>{const d=document.createElement('div');d.className='strategy';const s=document.createElement('div');s.className='small muted';s.textContent=a[0];const m=document.createElement('div');m.className='metric';m.style.fontSize='24px';m.textContent=a[1]+' / 100';d.append(s,m);box.appendChild(d)})}
+function renderSimulation(){
+ const n=parseInt(v('season'))||1;renderSeason(n);
+ const labels=['Season 1','Season 2','Season 3','Season 4','Season 5'];
+ const datasets=Object.keys(configs).map(k=>({label:configs[k].name,data:[1,2,3,4,5].map(i=>seasonValue(k,i).res),borderColor:{balanced:'#57d39b',cereal:'#ef887b',legume:'#55c9d8'}[k],backgroundColor:'transparent',tension:.3,pointRadius:3}));
+ if(rotationChart)rotationChart.destroy();
+ rotationChart=new Chart(document.getElementById('rotationChart'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#91aaa8'}}},scales:{y:{min:40,max:100,title:{display:true,text:'Climate resilience index'},ticks:{color:'#91aaa8'}},x:{ticks:{color:'#91aaa8'}}}}});
+ allResults().forEach(r=>{const el=document.getElementById('res-'+r.key);if(el)el.textContent='Soil '+r.soil+'% · Water '+r.water+'% · Resilience '+r.res+'/100'});
+}
+function renderCompare(){
+ const rows=document.getElementById('compareRows');rows.textContent='';
+ allResults().forEach(r=>{const tr=document.createElement('tr');const td1=document.createElement('td');const b=document.createElement('b');b.textContent=r.name;td1.appendChild(b);const td2=document.createElement('td');td2.className=r.soil>0?'good':'warn';td2.textContent=(r.soil>0?'+':'')+r.soil+'%';const td3=document.createElement('td');td3.textContent=(r.water>0?'+':'')+r.water+'%';const td4=document.createElement('td');td4.textContent=r.res+'/100';const td5=document.createElement('td');td5.textContent=r.suit+'/100';tr.append(td1,td2,td3,td4,td5);rows.appendChild(tr)});
+ const results=allResults();
+ const bestSoil=results.reduce((a,b)=>b.soil>a.soil?b:a);
+ const bestWater=results.reduce((a,b)=>b.water<a.water?b:a);
+ const bestRes=results.reduce((a,b)=>b.res>a.res?b:a);
+ document.getElementById('soilBest').textContent=(bestSoil.soil>0?'+':'')+bestSoil.soil+'%';
+ document.getElementById('soilBestName').textContent=bestSoil.name+' · relative change';
+ document.getElementById('waterBest').textContent=(bestWater.water>0?'+':'')+bestWater.water+'%';
+ document.getElementById('waterBestName').textContent=bestWater.name+' · relative to baseline';
+ document.getElementById('resBest').textContent=bestRes.res+'/100';
+ document.getElementById('resBestName').textContent=bestRes.name+' · simulated model score';
+}
+function recommend(){
+ const results=allResults();const p=v('priority'),water=v('waterAvail'),risk=v('riskTol');
+ let wSoil=1,wWater=1,wRes=1,wSuit=1;
+ if(p==='water')wWater+=1.5;if(p==='soil')wSoil+=1.5;if(p==='risk')wRes+=1.5;
+ if(water==='Low')wWater+=1.5;if(water==='High')wWater=Math.max(.4,wWater-.7);
+ if(risk==='Conservative')wRes+=1;if(risk==='Experimental')wSuit+=.5;
+ const scored=results.map(r=>({r,score:(r.soil/100)*wSoil+((100-r.water)/100)*wWater+(r.res/100)*wRes+(r.suit/100)*wSuit}));
+ scored.sort((a,b)=>b.score-a.score);const best=scored[0].r;
+ document.getElementById('recName').textContent=best.name;
+ const lead=best.key==='legume'?'Legume-forward sequencing includes nitrogen-fixing crop groups and a lower relative water-demand profile in this heuristic model.':best.key==='cereal'?'A cereal-intensive sequence prioritises staple-cereal continuity but increases repeated-cereal pressure and relative water demand.':'A diverse sequence balances cereal phases with legumes and reduces repeated-cereal pressure in the relative soil index.';
+ document.getElementById('recWhy').textContent=lead+' '+best.notes.slice(0,2).join(' ');
+ document.getElementById('recTrade').textContent=best.key==='legume'?'Different market and harvest timing':best.key==='cereal'?'Higher nutrient and water pressure':'More complex seasonal planning';
+ document.getElementById('recWater').textContent=best.water>0?'Higher relative demand':'Lower relative demand';
+ document.getElementById('recSoil').textContent=best.soil>0?'Positive relative trend':'Negative relative trend';
+ document.getElementById('recRisk').textContent=best.res>=80?'High heuristic resilience':best.res>=65?'Moderate resilience':'Lower resilience';
+ document.getElementById('recCaveat').textContent='This is an illustrative screening suggestion, not certified agricultural advice. Validate locally with soil testing, extension guidance and the seasonal forecast.';
+}
+function generateReport(){
+ const p=powerData;const rain=p?p.dates.reduce((a,d)=>a+(p.params.PRECTOTCORR[d]||0),0).toFixed(1):'not retrieved';
+ const lines=['TERRA-SYNC FIELD BRIEFING','Generated: '+new Date().toLocaleString(),'','FIELD: '+(v('fieldName')||'Unnamed field'),'COORDINATE: '+sample.lat.toFixed(5)+', '+sample.lon.toFixed(5),'AREA: '+v('area')+' ha','SOIL: '+v('soil')+' · pH '+v('ph')+' · organic carbon '+v('carbon')+'%','CURRENT CROP: '+v('crop'),'IRRIGATION: '+v('irrigation'),'PRIOR CROPS: '+v('history'),'','NASA POWER CLIMATE:','Period: '+(p?p.dates[0]+' to '+p.dates[p.dates.length-1]:'Not retrieved'),'Total precipitation: '+rain+' mm','','RECOMMENDED STRATEGY: '+document.getElementById('recName').textContent,'RATIONALE: '+document.getElementById('recWhy').textContent,'','LIMITATIONS:','- Rotation outputs are rule-based comparative estimates, not yield forecasts.','- Satellite layers provide context and require ground validation.','- Soil decisions require laboratory soil testing and local extension advice.','- The sample boundary is illustrative and not a legal cadastral boundary.'];
+ document.getElementById('reportOutput').value=lines.join('\n');toast('Field briefing generated');
+}
+function downloadReport(){const text=document.getElementById('reportOutput').value||'Generate a briefing first.';const blob=new Blob([text],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='terra_sync_field_briefing.txt';a.click();URL.revokeObjectURL(a.href);toast('Briefing download started')}
+function exportFarmJson(){const profile={field:v('fieldName'),lat:sample.lat,lon:sample.lon,area:num('area'),soil:v('soil'),ph:num('ph'),organicCarbon:num('carbon'),crop:v('crop'),irrigation:v('irrigation'),history:v('history'),recommendedStrategy:document.getElementById('recName').textContent,generatedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(profile,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='terra_sync_farm_profile.json';a.click();URL.revokeObjectURL(a.href);toast('Farm profile export started')}
+
+function filterResources(){
+ const q=(v('resourceSearch')||'').toLowerCase().trim();
+ const cat=v('resourceFilter');
+ let shown=0;
+ document.querySelectorAll('#resourceGrid .resource-card').forEach(card=>{
+  const matchesText=!q||card.dataset.search.includes(q);
+  const matchesCat=cat==='all'||card.querySelector('.resource-cat').textContent===cat;
+  card.hidden=!(matchesText&&matchesCat);if(!card.hidden)shown++;
+ });
+ document.getElementById('resourceCount').textContent=shown+' of 25 datasets';
+}
+
+const cropColors={Rice:'#3b82c4',Maize:'#d9b23a',Groundnut:'#c97b3a',Pulses:'#4caf72',Banana:'#2f7d4f',Millet:'#b08b45'};
+const soilColors={Loam:'#6b4f31','Sandy loam':'#8a6a42','Clay loam':'#5b402a',Clay:'#4a3320',Lateritic:'#7a4430'};
+function cropColor(name){return cropColors[name]||'#4caf72'}
+function renderFarmVisual(){
+ readFarm();
+ const svg=document.getElementById('farmSvg');if(!svg)return;
+ const area=farm.area;const scale=Math.max(.65,Math.min(1.45,Math.sqrt(area/2.4)));
+ const w=640*scale,h=360*scale;
+ const x0=(900-w)/2,y0=(900-w)/2+40;
+ const soil=soilColors[farm.soil]||'#6b4f31';
+ const irrigated=farm.irrigation!=='Rainfed only';
+ const reliable=farm.irrigation==='Reliable';
+ const seq=configs[selected].seq;
+ let g='';
+ g+='<defs><pattern id="soilTex" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M0 0L16 16M-4 4L4 -4M12 20L20 12" stroke="rgba(255,255,255,.08)" stroke-width="1"/></pattern></defs>';
+ g+='<rect width="900" height="560" fill="#edf3ed"/>';
+ g+='<text x="30" y="36" fill="#20332b" font-size="20" font-weight="700">TERRA-SYNC · '+farm.soil+' field schematic</text>';
+ g+='<text x="30" y="58" fill="#687d73" font-size="12">'+farm.area+' ha · '+farm.crop+' · '+farm.irrigation+'</text>';
+ g+='<g transform="translate('+x0+','+y0+')">';
+ g+='<rect x="0" y="0" width="'+w+'" height="'+h+'" rx="18" fill="'+soil+'" opacity=".55"/>';
+ g+='<rect x="0" y="0" width="'+w+'" height="'+h+'" rx="18" fill="url(#soilTex)"/>';
+ g+='<rect x="0" y="0" width="'+w+'" height="'+h+'" rx="18" fill="none" stroke="#57d39b" stroke-width="4" stroke-dasharray="10 7"/>';
+ const plotW=w/5;
+ for(let i=0;i<5;i++){
+  const crop=seq[i];const color=cropColor(crop);
+  g+='<rect x="'+(i*plotW+8)+'" y="30" width="'+(plotW-16)+'" height="'+(h-70)+'" rx="10" fill="'+color+'" fill-opacity=".28" stroke="'+color+'" stroke-width="2"/>';
+  g+='<text x="'+(i*plotW+plotW/2)+'" y="'+(h/2-8)+'" fill="#20332b" font-size="14" font-weight="700" text-anchor="middle">'+crop+'</text>';
+  g+='<text x="'+(i*plotW+plotW/2)+'" y="'+(h/2+14)+'" fill="#52675d" font-size="11" text-anchor="middle">Season '+(i+1)+'</text>';
+ }
+ if(irrigated){
+  g+='<path d="M0 '+(h-22)+' H'+w+'" stroke="#55c9d8" stroke-width="12" stroke-linecap="round" opacity=".85"/>';
+  g+='<text x="'+(w/2)+'" y="'+(h-6)+'" fill="#edf3ed" font-size="11" font-weight="700" text-anchor="middle">IRRIGATION CHANNEL</text>';
+ }
+ if(reliable){
+  g+='<circle cx="'+(w-32)+'" cy="24" r="14" fill="#55c9d8"/>';
+  g+='<text x="'+(w-32)+'" y="29" fill="#04231c" font-size="12" font-weight="800" text-anchor="middle">W</text>';
+ }
+ g+='<text x="12" y="20" fill="#52675d" font-size="11">N ↑</text>';
+ g+='</g>';
+ g+='<text x="30" y="530" fill="#687d73" font-size="11">Schematic generated from: soil texture, pH, organic carbon, area, current crop, irrigation access, previous crops and selected rotation strategy.</text>';
+ svg.innerHTML=g;
+ const summary=document.getElementById('visualSummary');summary.textContent='';
+ const rows=[['Farm area',farm.area+' ha'],['Soil texture',farm.soil],['Soil pH',farm.ph],['Organic carbon',farm.carbon+'%'],['Current crop',farm.crop],['Irrigation',farm.irrigation],['Water infrastructure',reliable?'Reliable irrigation and channel':'Seasonal channel'],['Selected strategy',configs[selected].name]];
+ rows.forEach(r=>{const d=document.createElement('div');d.className='data-row';const a=document.createElement('span');a.textContent=r[0];const b=document.createElement('b');b.textContent=r[1];d.append(a,b);summary.appendChild(d)});
+ const layout=document.getElementById('rotationLayout');layout.textContent='';
+ seq.forEach((crop,i)=>{const d=document.createElement('div');d.className='data-row';const a=document.createElement('span');a.textContent='Season '+(i+1);const b=document.createElement('b');b.textContent=crop;d.append(a,b);layout.appendChild(d)});
+}
+
+['soil','ph','carbon','area','crop','irrigation','history'].forEach(id=>{
+ const el=document.getElementById(id);if(!el)return;
+ el.addEventListener('change',()=>{updateTwin();renderSimulation();renderCompare();recommend();renderFarmVisual()});
+ el.addEventListener('input',()=>{updateTwin();renderSimulation();renderCompare();recommend();renderFarmVisual()});
+});
+window.addEventListener('DOMContentLoaded',()=>{
+ initBaseMaps();loadFarm();
+ updateTwin();renderCompare();renderSimulation();recommend();renderFarmVisual();
+ go(location.hash.replace(/^#\/?/,'')||'home',false);
+});
+</script>
+</body>
+</html>
